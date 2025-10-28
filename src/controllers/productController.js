@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const upload = require('../config/upload');
 
 const productController = {
     async create(req, res) {
@@ -115,6 +116,25 @@ const productController = {
         } catch (error) {
             console.error('Search products error:', error);
             res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async uploadImage(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+            }
+
+            const imageUrl = `/uploads/products/${req.file.filename}`;
+            
+            res.json({
+                message: 'Imagem enviada com sucesso',
+                imageUrl: imageUrl
+            });
+
+        } catch (error) {
+            console.error('Upload image error:', error);
+            res.status(500).json({ error: 'Erro no upload da imagem' });
         }
     }
 };
