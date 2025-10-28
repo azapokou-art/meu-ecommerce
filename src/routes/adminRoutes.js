@@ -10,5 +10,8 @@ router.get('/dashboard', authMiddleware, adminMiddleware, adminController.getDas
 router.get('/users', authMiddleware, adminMiddleware, adminController.getUsers);
 router.get('/products', authMiddleware, adminMiddleware, adminController.getProducts);
 router.patch('/products/:productId/status', authMiddleware, adminMiddleware, adminController.updateProductStatus);
+router.get('/orders', authMiddleware, adminMiddleware, adminController.getOrders);
+router.get('/orders/:orderId', authMiddleware, adminMiddleware, adminController.getOrderDetails);
+router.patch('/orders/:orderId/status', authMiddleware, adminMiddleware, adminController.updateOrderStatus);
 
 module.exports = router;
