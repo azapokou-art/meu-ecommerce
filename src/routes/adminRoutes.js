@@ -8,5 +8,7 @@ const router = express.Router();
 
 router.get('/dashboard', authMiddleware, adminMiddleware, adminController.getDashboard);
 router.get('/users', authMiddleware, adminMiddleware, adminController.getUsers);
+router.get('/products', authMiddleware, adminMiddleware, adminController.getProducts);
+router.patch('/products/:productId/status', authMiddleware, adminMiddleware, adminController.updateProductStatus);
 
 module.exports = router;

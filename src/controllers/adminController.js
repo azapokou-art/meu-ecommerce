@@ -57,8 +57,8 @@ const adminController = {
     SELECT id, name, email, role, created_at 
     FROM users 
     ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?
-`, [parseInt(limit), offset]);
+    LIMIT ${parseInt(limit)} OFFSET ${offset}
+`);
 
 const [total] = await pool.execute('SELECT COUNT(*) as total FROM users');
 
@@ -75,6 +75,59 @@ const [total] = await pool.execute('SELECT COUNT(*) as total FROM users');
 
         } catch (error) {
             console.error('Get users error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+
+    async getProducts(req, res) {
+        try {
+            const { page = 1, limit = 10 } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            const [products] = await pool.execute(`
+    SELECT * FROM products 
+    ORDER BY created_at DESC 
+    LIMIT ${parseInt(limit)} OFFSET ${offset}
+`);
+
+            const [total] = await pool.execute('SELECT COUNT(*) as total FROM products');
+
+            res.json({
+                message: 'Products retrieved successfully',
+                products: products,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(total[0].total / parseInt(limit)),
+                    total_products: total[0].total,
+                    per_page: parseInt(limit)
+                }
+            });
+
+        } catch (error) {
+            console.error('Get products error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async updateProductStatus(req, res) {
+        try {
+            const { productId } = req.params;
+            const { active } = req.body;
+
+            const sql = 'UPDATE products SET active = ? WHERE id = ?';
+            const [result] = await pool.execute(sql, [active, productId]);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Product not found' });
+            }
+
+            res.json({
+                message: `Product ${active ? 'activated' : 'deactivated'} successfully`
+            });
+
+        } catch (error) {
+            console.error('Update product status error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
