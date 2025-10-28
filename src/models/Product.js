@@ -47,6 +47,69 @@ class Product {
         const [result] = await pool.execute(sql, [id]);
         return result.affectedRows > 0;
     }
-}
+
+
+    static async search(filters = {}) {
+        let sql = `SELECT * FROM products WHERE active = TRUE`;
+        const params = [];
+
+        if (filters.name) {
+            sql += ' AND name LIKE ?';
+            params.push(`%${filters.name}%`);
+        }
+
+        sql += ' ORDER BY created_at DESC';
+
+    
+        if (filters.limit) {
+            sql += ` LIMIT ${parseInt(filters.limit)}`;
+        }
+
+     
+        if (filters.offset) {
+            sql += ` OFFSET ${parseInt(filters.offset)}`;
+        }
+
+        console.log('SQL:', sql);
+        console.log('PARAMS:', params);
+
+        const [rows] = await pool.execute(sql, params);
+        return rows;
+    }
+        
+
+ 
+    static async count(filters = {}) {
+        let sql = 'SELECT COUNT(*) as total FROM products WHERE active = TRUE';
+        const params = [];
+
+    
+        if (filters.name) {
+            sql += ' AND name LIKE ?';
+            params.push(`%${filters.name}%`);
+        }
+                if (filters.category_id) {
+            sql += ' AND category_id = ?';
+            params.push(parseInt(filters.category_id));
+        }
+        if (filters.min_price) {
+            sql += ' AND price >= ?';
+            params.push(parseFloat(filters.min_price));
+        }
+        if (filters.max_price) {
+            sql += ' AND price <= ?';
+            params.push(parseFloat(filters.max_price));
+        }
+
+        if (filters.featured !== undefined) {
+            sql += ' AND featured = ?';
+            params.push(filters.featured);
+        }
+
+        const [rows] = await pool.execute(sql, params);
+        return rows[0].total;
+    }
+};
+
 
 module.exports = Product;

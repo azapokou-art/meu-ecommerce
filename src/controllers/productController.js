@@ -61,6 +61,61 @@ const productController = {
             console.error('Get product error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
+    },
+
+    async search(req, res) {
+        try {
+            const {
+                name,
+                category_id,
+                min_price,
+                max_price,
+                featured,
+                sort_by = 'created_at',
+                sort_order = 'desc',
+                page = 1,
+                limit = 10
+            } = req.query;
+
+        
+            const filters = {};
+            
+            if (name) filters.name = name;
+            if (category_id) filters.category_id = parseInt(category_id);
+            if (min_price) filters.min_price = parseFloat(min_price);
+            if (max_price) filters.max_price = parseFloat(max_price);
+            if (featured !== undefined) filters.featured = featured === 'true';
+            if (sort_by) filters.sort_by = sort_by;
+            if (sort_order) filters.sort_order = sort_order;
+
+         
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+            filters.limit = parseInt(limit);
+            filters.offset = offset;
+
+        
+            const products = await Product.search(filters);
+            const total = await Product.count(filters);
+            const totalPages = Math.ceil(total / parseInt(limit));
+
+            res.json({
+                message: 'Products retrieved successfully',
+                products: products,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: totalPages,
+                    total_products: total,
+                    per_page: parseInt(limit),
+                    has_next: parseInt(page) < totalPages,
+                    has_prev: parseInt(page) > 1
+                },
+                filters: filters
+            });
+
+        } catch (error) {
+            console.error('Search products error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 };
 
