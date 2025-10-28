@@ -130,6 +130,104 @@ const [total] = await pool.execute('SELECT COUNT(*) as total FROM users');
             console.error('Update product status error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
+    },
+
+    async getOrders(req, res) {
+        try {
+            const { page = 1, limit = 10, status } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            let sql = `
+                SELECT o.*, u.name as user_name, u.email as user_email,
+                       COUNT(oi.id) as items_count
+                FROM orders o
+                JOIN users u ON o.user_id = u.id
+                LEFT JOIN order_items oi ON o.id = oi.order_id
+            `;
+
+            const params = [];
+
+            if (status) {
+                sql += ' WHERE o.status = ?';
+                params.push(status);
+            }
+
+            sql += ' GROUP BY o.id ORDER BY o.created_at DESC';
+            sql += ` LIMIT ${parseInt(limit)} OFFSET ${offset}`;
+
+            const [orders] = await pool.execute(sql, params);
+
+        
+            let countSql = 'SELECT COUNT(*) as total FROM orders o';
+            if (status) {
+                countSql += ' WHERE o.status = ?';
+            }
+            const [total] = await pool.execute(countSql, status ? [status] : []);
+
+            res.json({
+                message: 'Orders retrieved successfully',
+                orders: orders,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(total[0].total / parseInt(limit)),
+                    total_orders: total[0].total,
+                    per_page: parseInt(limit)
+                }
+            });
+
+        } catch (error) {
+            console.error('Get orders error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async updateOrderStatus(req, res) {
+        try {
+            const { orderId } = req.params;
+            const { status } = req.body;
+
+            const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
+            
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({ error: 'Invalid order status' });
+            }
+
+            const sql = 'UPDATE orders SET status = ? WHERE id = ?';
+            const [result] = await pool.execute(sql, [status, orderId]);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+
+            res.json({
+                message: `Order status updated to ${status} successfully`
+            });
+
+        } catch (error) {
+            console.error('Update order status error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async getOrderDetails(req, res) {
+        try {
+            const { orderId } = req.params;
+
+            const order = await Order.findById(orderId);
+
+            if (!order) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+
+            res.json({
+                message: 'Order details retrieved successfully',
+                order: order
+            });
+
+        } catch (error) {
+            console.error('Get order details error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 };
 
