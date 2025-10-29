@@ -94,6 +94,46 @@ const cartController = {
             console.error('Remove from cart error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
+    },
+
+
+    async calculateShipping(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { shipping_method_id } = req.body;
+
+            if (!shipping_method_id) {
+                return res.status(400).json({ error: 'Shipping method ID is required' });
+            }
+
+        
+            const cartItems = await Cart.findByUserId(userId);
+            
+            if (cartItems.length === 0) {
+                return res.status(400).json({ error: 'Cart is empty' });
+            }
+
+         
+            const Shipping = require('../models/Shipping');
+            const shipping = await Shipping.calculateCartShipping(cartItems, shipping_method_id);
+
+            const cartTotal = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+            const totalWithShipping = cartTotal + parseFloat(shipping.price);
+
+            res.json({
+                message: 'Shipping calculated successfully',
+                cart: {
+                    items: cartItems,
+                    subtotal: cartTotal.toFixed(2),
+                    shipping: shipping,
+                    total: totalWithShipping.toFixed(2)
+                }
+            });
+
+        } catch (error) {
+            console.error('Calculate shipping error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 };
 
