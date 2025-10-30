@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { testConnection } = require('./config/database');
+const { authLimiter, apiLimiter, createLimiter } = require('./middlewares/rateLimit');
 const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -10,6 +11,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const shippingRoutes = require('./routes/shippingRoutes');
+const supportRoutes = require('./routes/supportRoutes');
 
 require('dotenv').config();
 
@@ -18,6 +20,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/', apiLimiter);
+app.use('/api/products', createLimiter);
+app.use('/api/reviews', createLimiter);
+
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
@@ -28,6 +38,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/support', supportRoutes);
 
 app.get('/test-db', async (req, res) => {
     const dbConnected = await testConnection();
