@@ -13,5 +13,7 @@ router.patch('/products/:productId/status', authMiddleware, adminMiddleware, adm
 router.get('/orders', authMiddleware, adminMiddleware, adminController.getOrders);
 router.get('/orders/:orderId', authMiddleware, adminMiddleware, adminController.getOrderDetails);
 router.patch('/orders/:orderId/status', authMiddleware, adminMiddleware, adminController.updateOrderStatus);
+router.get('/reports/sales', authMiddleware, adminMiddleware, adminController.getSalesReport);
+router.get('/reports/customers', authMiddleware, adminMiddleware, adminController.getCustomersReport);
 
 module.exports = router;

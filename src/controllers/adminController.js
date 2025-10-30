@@ -228,6 +228,113 @@ const [total] = await pool.execute('SELECT COUNT(*) as total FROM users');
             console.error('Get order details error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
+    },
+
+    async getSalesReport(req, res) {
+        try {
+            const { period = 'month', start_date, end_date } = req.query;
+            
+            let dateFilter = '';
+            const params = [];
+
+            if (start_date && end_date) {
+                dateFilter = ' WHERE o.created_at BETWEEN ? AND ?';
+                params.push(start_date, end_date);
+            } else {
+            
+                const periods = {
+                    'day': 'CURDATE()',
+                    'week': 'DATE_SUB(CURDATE(), INTERVAL 7 DAY)',
+                    'month': 'DATE_SUB(CURDATE(), INTERVAL 30 DAY)',
+                    'year': 'DATE_SUB(CURDATE(), INTERVAL 365 DAY)'
+                };
+                
+                if (periods[period]) {
+                    dateFilter = ' WHERE o.created_at >= ?';
+                    params.push(periods[period]);
+                }
+            }
+
+        
+            const [salesResult] = await pool.execute(`
+                SELECT 
+                    COUNT(*) as total_orders,
+                    SUM(total_amount) as total_revenue,
+                    AVG(total_amount) as average_order_value
+                FROM orders o
+                ${dateFilter}
+            `, params);
+
+          
+            const [statusResult] = await pool.execute(`
+                SELECT 
+                    status,
+                    COUNT(*) as order_count,
+                    SUM(total_amount) as revenue
+                FROM orders o
+                ${dateFilter}
+                GROUP BY status
+            `, params);
+
+          
+            const [productsResult] = await pool.execute(`
+                SELECT 
+                    p.name,
+                    p.id,
+                    SUM(oi.quantity) as total_sold,
+                    SUM(oi.subtotal) as total_revenue
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                JOIN orders o ON oi.order_id = o.id
+                ${dateFilter.replace('o.', 'o.')}
+                GROUP BY p.id, p.name
+                ORDER BY total_sold DESC
+                LIMIT 10
+            `, params);
+
+            res.json({
+                message: 'Sales report generated successfully',
+                report: {
+                    period: period,
+                    summary: salesResult[0],
+                    by_status: statusResult[0],
+                    top_products: productsResult
+                }
+            });
+
+        } catch (error) {
+            console.error('Get sales report error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async getCustomersReport(req, res) {
+        try {
+        
+            const [customersResult] = await pool.execute(`
+                SELECT 
+                    u.id,
+                    u.name,
+                    u.email,
+                    COUNT(o.id) as total_orders,
+                    SUM(o.total_amount) as total_spent
+                FROM users u
+                LEFT JOIN orders o ON u.id = o.user_id
+                WHERE o.id IS NOT NULL
+                GROUP BY u.id, u.name, u.email
+                ORDER BY total_spent DESC
+                LIMIT 10
+            `);
+
+            res.json({
+                message: 'Customers report generated successfully',
+                top_customers: customersResult
+            });
+
+        } catch (error) {
+            console.error('Get customers report error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     }
 };
 
