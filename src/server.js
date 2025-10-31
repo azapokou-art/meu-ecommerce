@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const shippingRoutes = require('./routes/shippingRoutes');
 const supportRoutes = require('./routes/supportRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const couponRoutes = require('./routes/couponRoutes');
 
 require('dotenv').config();
 
@@ -41,6 +42,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/coupons', couponRoutes);
 
 app.get('/test-db', async (req, res) => {
     const dbConnected = await testConnection();
