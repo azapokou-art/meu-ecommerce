@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const UserPoints = require('../models/UserPoints');
 
 const orderController = {
     async createOrder(req, res) {
@@ -32,6 +33,17 @@ const orderController = {
                     subtotal: item.subtotal
                 });
             }
+
+            const pointsEarned = Math.floor(totalAmount);
+
+await UserPoints.addPoints(
+    userId,
+    pointsEarned,
+    'earned',
+    `Pontos ganhos pelo pedido #${orderId}`,
+    orderId,
+    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+);
 
         
             await Cart.clear(userId);
