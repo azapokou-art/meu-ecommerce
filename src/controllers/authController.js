@@ -45,6 +45,11 @@ const authController = {
         try {
             const { email, password } = req.body;
 
+            console.log('Body completo:', req.body);
+        console.log('Email:', email);
+        console.log('Password:', password);
+
+
             const user = await User.findByEmail(email);
             if (!user) {
                 return res.status(401).json({ error: 'Invalid email or password' });
