@@ -32,9 +32,14 @@ const orderController = {
                     unitPrice: item.price,
                     subtotal: item.subtotal
                 });
-            }
+    
 
             const pointsEarned = Math.floor(totalAmount);
+
+            for (const item of cartItems) {
+    await StockMonitorService.checkProductStockAfterSale(item.product_id, item.quantity);
+            }
+        };
 
 await UserPoints.addPoints(
     userId,
@@ -44,6 +49,7 @@ await UserPoints.addPoints(
     orderId,
     new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 );
+            
 
         
             await Cart.clear(userId);
