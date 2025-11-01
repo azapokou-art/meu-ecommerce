@@ -41,6 +41,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 
 app.use('/api/shipping', require('./routes/shipping'));
 
