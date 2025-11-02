@@ -45,6 +45,7 @@ app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 app.use('/api/points', require('./routes/pointsRoutes'));
 app.use('/api/alerts', require('./routes/stockAlertRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
 
 app.use('/api/shipping', require('./routes/shipping'));
 

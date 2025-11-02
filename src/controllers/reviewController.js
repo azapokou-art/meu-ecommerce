@@ -14,7 +14,6 @@ const reviewController = {
         if (rating < 1 || rating > 5) {
             return res.status(400).json({ error: 'Rating must be between 1 and 5' });
         }
-
         
         const existingReview = await Review.findByUserAndProduct(userId, productId);
         if (existingReview) {
