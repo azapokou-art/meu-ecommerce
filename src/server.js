@@ -46,7 +46,7 @@ app.use('/api/points', require('./routes/pointsRoutes'));
 app.use('/api/alerts', require('./routes/stockAlertRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/profile', require('./routes/profileRoutes'));
-
+app.use('/api/tracking', require('./routes/trackingRoutes'));
 app.use('/api/shipping', require('./routes/shipping'));
 
 app.get('/test-db', async (req, res) => {
