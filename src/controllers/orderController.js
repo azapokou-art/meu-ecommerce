@@ -49,6 +49,8 @@ await UserPoints.addPoints(
     orderId,
     new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 );
+
+await Order.updateStatus(orderId, 'pending');
             
 
         
