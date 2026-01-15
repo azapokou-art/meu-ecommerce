@@ -1,5 +1,5 @@
 const express = require('express');
-const productController = require('../controllers/productController');
+const productController = require('../handler/productController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../infrastructure/multerConfig');
 

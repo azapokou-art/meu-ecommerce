@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const StockAlert = require('../models/StockAlert');
-const StockMonitorService = require('../services/stockMonitorService');
+const StockMonitorService = require('../services/StockMonitorService');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 
