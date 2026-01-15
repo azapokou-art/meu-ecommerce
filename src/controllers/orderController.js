@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const UserPoints = require('../models/UserPoints');
+const StockMonitorService = require('../services/StockMonitorService');
 
 const orderController = {
     async createOrder(req, res) {
@@ -39,7 +40,6 @@ const orderController = {
             for (const item of cartItems) {
     await StockMonitorService.checkProductStockAfterSale(item.product_id, item.quantity);
             }
-        };
 
 await UserPoints.addPoints(
     userId,
@@ -49,6 +49,7 @@ await UserPoints.addPoints(
     orderId,
     new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 );
+            };
 
 await Order.updateStatus(orderId, 'pending');
             

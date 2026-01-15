@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { pool } = require('../infrastructure/database');
 
 class Product {
     static async create(productData) {
