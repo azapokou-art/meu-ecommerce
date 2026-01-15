@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
-const { pool } = require('../config/database');
+const { pool } = require('../infrastructure/database');
 
 const adminController = {
     async getDashboard(req, res) {

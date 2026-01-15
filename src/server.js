@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { testConnection } = require('./config/database');
+const { testConnection } = require('./infrastructure/database');
 const { authLimiter, apiLimiter, createLimiter } = require('./middlewares/rateLimit');
 const path = require('path');
 const authRoutes = require('./routes/authRoutes');

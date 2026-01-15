@@ -1,6 +1,6 @@
 const stripeService = require('../services/stripeService');
 const Order = require('../models/Order');
-const { pool } = require('../config/database');
+const { pool } = require('../infrastructure/database');
 
 const paymentController = {
     async createPaymentSession(req, res) {
