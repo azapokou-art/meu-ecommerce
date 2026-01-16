@@ -118,7 +118,7 @@ const authController = {
         
             const crypto = require('crypto');
             const resetToken = crypto.randomBytes(32).toString('hex');
-            const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hora
+            const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000);
 
         
             const sql = `
