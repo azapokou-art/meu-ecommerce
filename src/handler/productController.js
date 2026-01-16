@@ -1,5 +1,5 @@
 const Product = require('../models/Product');
-const upload = require('../infrastructure/multerConfig');
+const upload = require('../infrastructure/upload');
 
 const productController = {
     async create(req, res) {

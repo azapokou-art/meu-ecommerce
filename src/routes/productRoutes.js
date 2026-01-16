@@ -1,7 +1,7 @@
 const express = require('express');
 const productController = require('../handler/productController');
 const authMiddleware = require('../middlewares/authMiddleware');
-const upload = require('../infrastructure/multerConfig');
+const upload = require('../infrastructure/upload');
 
 const router = express.Router();
 
