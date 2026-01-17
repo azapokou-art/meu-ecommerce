@@ -1,46 +1,35 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { pool } = require('../infrastructure/database');
+const RegisterUseCase = require('../application/use-cases/RegisterUseCase');
+const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
+const PasswordHasher = require('../infrastructure/services/PasswordHasher');
 
-const authController = {
+const authHandler = {
     async register(req, res) {
         try {
-            const { name, email, password, cpf, phone } = req.body;
+            const UserRepository = new UserRepositoryImpl();
+            const passwordHasher = new PasswordHasher();
+            const registerUseCase = new RegisterUseCase(UserRepository, passwordHasher);
 
-            const existingUser = await User.findByEmail(email);
-            if (existingUser) {
-                return res.status(400).json({ error: 'Email already registered' });
-            }
-
-            if (cpf) {
-                const existingCPF = await User.findByCPF(cpf);
-                if (existingCPF) {
-                    return res.status(400).json({ error: 'CPF already registered' });
-                }
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const userId = await User.create({
-                name,
-                email,
-                password: hashedPassword,
-                cpf,
-                phone
+            const result = await registerUseCase.execute({
+                name: req.body.name,
+                email: req.body.email,
+                password: req.body.password,
+                cpf: req.body.cpf,
+                phone: req.body.phone
             });
-
-            res.status(201).json({ 
-                message: 'User created successfully',
-                userId: userId 
-            });
-
+            res.status(201).json(result);
         } catch (error) {
-            console.error('Register error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            console.error('Registration error:', error);
+            if (error.message.includes('Email already in use')) {
+                return res.status(400).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     },
 
+           
+
+           
     async login(req, res) {
         try {
             const { email, password } = req.body;
@@ -246,4 +235,4 @@ const authController = {
     }
 };
 
-module.exports = authController;
+module.exports = authHandler;
