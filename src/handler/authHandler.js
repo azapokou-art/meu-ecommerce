@@ -1,6 +1,8 @@
 const RegisterUseCase = require('../application/use-cases/RegisterUseCase');
+const LoginUseCase = require('../application/use-cases/LoginUseCase');
 const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
 const PasswordHasher = require('../infrastructure/services/PasswordHasher');
+const TokenService = require('../infrastructure/services/TokenService');
 
 const authHandler = {
     async register(req, res) {
@@ -34,45 +36,28 @@ const authHandler = {
         try {
             const { email, password } = req.body;
 
-            console.log('Body completo:', req.body);
-        console.log('Email:', email);
-        console.log('Password:', password);
-
-
-            const user = await User.findByEmail(email);
-            if (!user) {
-                return res.status(401).json({ error: 'Invalid email or password' });
-            }
-
-            const validPassword = await bcrypt.compare(password, user.password);
-            if (!validPassword) {
-                return res.status(401).json({ error: 'Invalid email or password' });
-            }
-
-            const token = jwt.sign(
-                { 
-                    userId: user.id,
-                    email: user.email,
-                    role: user.role
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: '24h' }
-            );
-
-            const { password: _, ...userWithoutPassword } = user;
+            const userRepository = new UserRepositoryImpl();
+            const passwordHasher = new PasswordHasher();
+            const tokenService = new TokenService(process.env.JWT_SECRET);
+            const loginUseCase = new LoginUseCase(userRepository, passwordHasher, tokenService);
             
-            res.json({
-                message: 'Login successful',
-                user: userWithoutPassword,
-                token: token
+            const result = await loginUseCase.execute({
+                email: req.body.email,
+                password: req.body.password
             });
 
+            res.json(result);
         } catch (error) {
             console.error('Login error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            
+            if (error.message.includes('Invalid email or password')) {
+                return res.status(401).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     },
-
+            
     async logout(req, res) {
         try {
             
