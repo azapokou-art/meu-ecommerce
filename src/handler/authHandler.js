@@ -1,6 +1,10 @@
 const RegisterUseCase = require('../application/use-cases/RegisterUseCase');
 const LoginUseCase = require('../application/use-cases/LoginUseCase');
+const ForgotPasswordUseCase = require('../application/use-cases/ForgotPasswordUseCase');
 const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
+const PasswordResetTokenRepositoryImpl = require('../infrastructure/database/repositories/PasswordResetTokenRepositoryImpl');   
+const TokenGenerator = require('../infrastructure/services/TokenGenerator');
+const EmailService = require('../infrastructure/services/EmailService');
 const PasswordHasher = require('../infrastructure/services/PasswordHasher');
 const TokenService = require('../infrastructure/services/TokenService');
 
