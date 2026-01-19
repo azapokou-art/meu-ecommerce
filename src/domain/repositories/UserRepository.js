@@ -14,5 +14,8 @@ class UserRepository {
     async findById(id) {
         throw new Error('Method not implemented');
     }
+    async updatePassword(userId, hashedPassword) {
+        throw new Error('Method not implemented');
+    }
 }
 module.exports = UserRepository;
