@@ -76,45 +76,29 @@ const authHandler = {
     },
 
 
-    async forgotPassword(req, res) {
+   async forgotPassword(req, res) {
         try {
-            const { email } = req.body;
+            const userRepository = new UserRepositoryImpl();
+            const tokenRepository = new PasswordResetTokenRepositoryImpl();
+            const tokenGenerator = new TokenGenerator();
+            const emailService = new EmailService();
 
-            if (!email) {
-                return res.status(400).json({ error: 'Email is required' });
-            }
-
-            const user = await User.findByEmail(email);
-            if (!user) {
-             
-
-                return res.json({ 
-                    message: 'If the email exists, a password reset link has been sent' 
-                });
-            }
-
-        
-            const crypto = require('crypto');
-            const resetToken = crypto.randomBytes(32).toString('hex');
-            const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000);
-
-        
-            const sql = `
-                INSERT INTO password_reset_tokens (user_id, token, expires_at) 
-                VALUES (?, ?, ?)
-            `;
-            await pool.execute(sql, [user.id, resetToken, expiresAt]);
-
-
-            res.json({ 
-                message: 'Password reset token generated',
-                resetToken: resetToken,
-                expiresAt: expiresAt
-            });
-
+            const forgotPasswordUseCase = new ForgotPasswordUseCase(
+                userRepository,
+                tokenRepository,
+                tokenGenerator,
+                emailService
+            );
+            const result = await forgotPasswordUseCase.execute(req.body.email);
+            res.json(result);
         } catch (error) {
             console.error('Forgot password error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            
+            if (error.message.includes('Invalid email address')) {
+                return res.status(400).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     },
 
