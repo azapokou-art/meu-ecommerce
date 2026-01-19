@@ -8,6 +8,9 @@ class PasswordResetTokenRepository {
     async findValidToken(token) {
         throw new Error('Method not implemented');
     }
+    async markAsUsed(token) {
+        throw new Error('Method not implemented');
+    }
     async invalidate(token) {
         throw new Error('Method not implemented');
     }

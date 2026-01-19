@@ -14,5 +14,23 @@ class PasswordResetTokenRepositoryImpl extends PasswordResetTokenRepository {
         const [rows] = await pool.execute(sql, [token]);
         return rows[0] || null;
     }
+
+    async findValidToken(token) {
+        const sql = `
+            SELECT * FROM password_reset_tokens 
+            WHERE token = ? AND used = FALSE AND expires_at > NOW()
+            LIMIT 1
+        `;
+        const [rows] = await pool.execute(sql, [token]);
+        return rows[0] || null;
+    }
+    async markAsUsed(tokenId) {
+        const sql = `
+            UPDATE password_reset_tokens 
+            SET used = TRUE, used_at = NOW() 
+            WHERE token = ?
+        `;
+        await pool.execute(sql, [tokenId]);
+    }
 }
 module.exports = PasswordResetTokenRepositoryImpl;
