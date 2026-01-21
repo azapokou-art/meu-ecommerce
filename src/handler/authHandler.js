@@ -1,6 +1,7 @@
 const RegisterUseCase = require('../application/use-cases/RegisterUseCase');
 const LoginUseCase = require('../application/use-cases/LoginUseCase');
 const ForgotPasswordUseCase = require('../application/use-cases/ForgotPasswordUseCase');
+const ResetPasswordUseCase = require('../application/use-cases/ResetPasswordUseCase');
 const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
 const PasswordResetTokenRepositoryImpl = require('../infrastructure/database/repositories/PasswordResetTokenRepositoryImpl');   
 const TokenGenerator = require('../infrastructure/services/TokenGenerator');
@@ -104,53 +105,36 @@ const authHandler = {
 
     async resetPassword(req, res) {
         try {
-            const { token, newPassword } = req.body;
+            const tokenRepository = new PasswordResetTokenRepositoryImpl();
+            const userRepository = new UserRepositoryImpl();
+            const passwordHasher = new PasswordHasher();
+            const passwordValidator = new PasswordValidator();
 
-            if (!token || !newPassword) {
-                return res.status(400).json({ error: 'Token and new password are required' });
-            }
+            const resetPasswordUseCase = new ResetPasswordUseCase(
+                tokenRepository,
+                userRepository,
+                passwordHasher,
+                passwordValidator
+            );
 
-            if (newPassword.length < 6) {
-                return res.status(400).json({ error: 'Password must be at least 6 characters' });
-            }
-
-       
-            const sql = `
-                SELECT prt.*, u.email 
-                FROM password_reset_tokens prt
-                JOIN users u ON prt.user_id = u.id
-                WHERE prt.token = ? AND prt.used = FALSE AND prt.expires_at > NOW()
-            `;
-            const [tokens] = await pool.execute(sql, [token]);
-
-            if (tokens.length === 0) {
-                return res.status(400).json({ error: 'Invalid or expired token' });
-            }
-
-            const resetToken = tokens[0];
-
-           
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-          
-            const updateSql = 'UPDATE users SET password = ? WHERE id = ?';
-            await pool.execute(updateSql, [hashedPassword, resetToken.user_id]);
-
-          
-            const markUsedSql = 'UPDATE password_reset_tokens SET used = TRUE WHERE id = ?';
-            await pool.execute(markUsedSql, [resetToken.id]);
-
-            res.json({ 
-                message: 'Password reset successfully' 
-            });
-
+            const result = await resetPasswordUseCase.execute(req.body.token, req.body.newPassword);
+            res.json(result);
         } catch (error) {
             console.error('Reset password error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+
+            if (
+                error.message.includes('require') ||
+                error.message.includes('must be') ||
+                error.message.includes('Invalid') ||
+                error.message.includes('expired') ||
+                error.message.includes('already used')
+            ) {
+                return res.status(400).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     },
-
-
 
     async deleteAccount(req, res) {
         try {
