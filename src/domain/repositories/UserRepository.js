@@ -17,5 +17,11 @@ class UserRepository {
     async updatePassword(userId, hashedPassword) {
         throw new Error('Method not implemented');
     }
+    async deactivate(userId) {
+        throw new Error('Method not implemented');
+    }
+    async delete(userId) {
+        throw new Error('Method not implemented');
+    }
 }
 module.exports = UserRepository;
