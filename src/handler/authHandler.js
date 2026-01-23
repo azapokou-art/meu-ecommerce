@@ -3,6 +3,7 @@ const LoginUseCase = require('../application/use-cases/LoginUseCase');
 const ForgotPasswordUseCase = require('../application/use-cases/ForgotPasswordUseCase');
 const ResetPasswordUseCase = require('../application/use-cases/ResetPasswordUseCase');
 const DeleteAccountUseCase = require('../application/use-cases/DeleteAccountUseCase');
+const GetProfileUseCase = require('../application/use-cases/GetProfileUseCase');
 const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
 const PasswordResetTokenRepositoryImpl = require('../infrastructure/database/repositories/PasswordResetTokenRepositoryImpl');   
 const TokenGenerator = require('../infrastructure/services/TokenGenerator');
@@ -169,19 +170,18 @@ const authHandler = {
         try {
             const userId = req.user.userId;
             
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            res.json({
-                message: 'Profile retrieved successfully',
-                user: user
-            });
-
+            const userRepository = new UserRepositoryImpl();
+            const getProfileUseCase = new GetProfileUseCase(userRepository);
+            const result = await getProfileUseCase.execute(userId);
+            res.json(result);
         } catch (error) {
             console.error('Get profile error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+
+            if (error.message.includes('User not found')) {
+                return res.status(404).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     }
 };
