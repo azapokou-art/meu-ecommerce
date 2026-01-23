@@ -23,5 +23,8 @@ class UserRepository {
     async delete(userId) {
         throw new Error('Method not implemented');
     }
+    async findProfileById(id) {
+        throw new Error('Method not implemented');
+    }
 }
 module.exports = UserRepository;
