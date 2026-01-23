@@ -2,6 +2,7 @@ const RegisterUseCase = require('../application/use-cases/RegisterUseCase');
 const LoginUseCase = require('../application/use-cases/LoginUseCase');
 const ForgotPasswordUseCase = require('../application/use-cases/ForgotPasswordUseCase');
 const ResetPasswordUseCase = require('../application/use-cases/ResetPasswordUseCase');
+const DeleteAccountUseCase = require('../application/use-cases/DeleteAccountUseCase');
 const UserRepositoryImpl = require('../infrastructure/database/repositories/UserRepositoryImpl');
 const PasswordResetTokenRepositoryImpl = require('../infrastructure/database/repositories/PasswordResetTokenRepositoryImpl');   
 const TokenGenerator = require('../infrastructure/services/TokenGenerator');
@@ -139,35 +140,28 @@ const authHandler = {
     async deleteAccount(req, res) {
         try {
             const userId = req.user.userId;
-            const { password } = req.body;
+            const userEmail = req.user.email;
 
-            if (!password) {
-                return res.status(400).json({ error: 'Password is required for account deletion' });
-            }
+            const userRepository = new UserRepositoryImpl();
+            const passwordHasher = new PasswordHasher();
+            const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, passwordHasher);
+            const result = await deleteAccountUseCase.execute(userId, userEmail, req.body.password);
 
-            
-            const user = await User.findByEmail(req.user.email);
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            
-            const validPassword = await bcrypt.compare(password, user.password);
-            if (!validPassword) {
-                return res.status(401).json({ error: 'Invalid password' });
-            }
-
-        
-            const sql = 'UPDATE users SET active = FALSE WHERE id = ?';
-            await pool.execute(sql, [userId]);
-
-            res.json({ 
-                message: 'Account deleted successfully' 
-            });
-
+            res.json(result);
         } catch (error) {
             console.error('Delete account error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+
+            if (
+                error.message.includes('required') ||
+                error.message.includes('not found') ||
+                error.message.includes('Invalid password') ||
+                error.message.includes('mismatch')
+            ) {
+                const status = error.message.includes('Invalid password') ? 401 : 400;
+                return res.status(status).json({ error: error.message });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
         }
     },
 
