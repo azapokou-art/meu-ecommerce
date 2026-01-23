@@ -16,7 +16,6 @@ class UserRepositoryImpl extends UserRepository {
     }
     
 
-
     async findByEmail(email) {
         const sql = 'SELECT * FROM users WHERE email = ?';
         const [rows] = await pool.execute(sql, [email]);
@@ -33,6 +32,25 @@ class UserRepositoryImpl extends UserRepository {
         const sql = 'SELECT id FROM users WHERE cpf = ?';
         const [rows] = await pool.execute(sql, [cpf]);
         return rows[0];
+    }
+
+    async deactivate(userId) {
+        const sql = 'UPDATE users SET active = FALSE WHERE id = ?';
+        await pool.execute(sql, [userId]);
+    }
+    async delete(userId) {
+        const sql = 'DELETE FROM users WHERE id = ?';
+        await pool.execute(sql, [userId]);
+    }
+    async findById(id) {
+        const sql = 'SELECT * FROM users WHERE id = ?';
+        const [rows] = await pool.execute(sql, [id]);
+        return rows[0] || null;
+    }
+    async findProfileById(id) {
+        const sql = 'SELECT id, name, email, phone, created_at FROM users WHERE id = ?';
+        const [rows] = await pool.execute(sql, [id]);
+        return rows[0] || null;
     }
 }
 module.exports = UserRepositoryImpl;
