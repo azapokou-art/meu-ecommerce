@@ -1,5 +1,5 @@
 const express = require('express');
-const couponController = require('../handler/couponHandler');
+const couponController = require('../interface/handler/couponHandler');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 
