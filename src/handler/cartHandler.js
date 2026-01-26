@@ -1,140 +1,102 @@
-const Cart = require('../models/Cart');
+const CartRepositoryImpl = require('../../infrastructure/database/repositories/CartRepositoryImpl');
+const ShippingService = require('../../domain/services/ShippingService');
 
-const cartController = {
+const AddItemToCartUseCase = require('../../application/use-cases/cart/AddItemToCartUseCase');
+const GetCartUseCase = require('../../application/use-cases/cart/GetCartUseCase');
+const UpdateCartItemQuantityUseCase = require('../../application/use-cases/cart/UpdateCartItemQuantityUseCase');
+const RemoveCartItemUseCase = require('../../application/use-cases/cart/RemoveCartItemUseCase');
+const CalculateCartShippingUseCase = require('../../application/use-cases/cart/CalculateCartShippingUseCase');
+
+const cartRepository = new CartRepositoryImpl();
+const shippingService = new ShippingService();
+
+const addItemToCartUseCase = new AddItemToCartUseCase(cartRepository);
+const getCartUseCase = new GetCartUseCase(cartRepository);
+const updateCartItemQuantityUseCase = new UpdateCartItemQuantityUseCase(cartRepository);
+const removeCartItemUseCase = new RemoveCartItemUseCase(cartRepository);
+const calculateCartShippingUseCase = new CalculateCartShippingUseCase(
+    cartRepository,
+    shippingService
+);
+
+const cartHandler = {
     async addItem(req, res) {
         try {
-            const userId = req.user.userId;
+            const cartId = req.user.userId;
             const { productId, quantity } = req.body;
 
-            if (!productId) {
-                return res.status(400).json({ error: 'Product ID is required' });
-            }
+            await addItemToCartUseCase.execute({
+                cartId,
+                productId,
+                quantity
+            });
 
-            const success = await Cart.addItem(userId, productId, quantity || 1);
-
-            if (success) {
-                res.json({ 
-                    message: 'Product added to cart successfully'
-                });
-            } else {
-                res.status(400).json({ error: 'Failed to add product to cart' });
-            }
-
+            return res.json({ message: 'Product added to cart successfully' });
         } catch (error) {
-            console.error('Add to cart error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
     async getCart(req, res) {
         try {
-            const userId = req.user.userId;
-            const cartItems = await Cart.findByUserId(userId);
+            const cartId = req.user.userId;
 
-            const total = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+            const cart = await getCartUseCase.execute({ cartId });
 
-            res.json({
-                message: 'Cart retrieved successfully',
-                cart: cartItems,
-                total: total.toFixed(2),
-                itemCount: cartItems.length
-            });
-
+            return res.json(cart);
         } catch (error) {
-            console.error('Get cart error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
     async updateQuantity(req, res) {
         try {
-            const userId = req.user.userId;
+            const cartId = req.user.userId;
             const { productId, quantity } = req.body;
 
-            if (!productId || quantity < 1) {
-                return res.status(400).json({ error: 'Valid product ID and quantity are required' });
-            }
+            await updateCartItemQuantityUseCase.execute({
+                cartId,
+                productId,
+                quantity
+            });
 
-            const success = await Cart.updateQuantity(userId, productId, quantity);
-
-            if (success) {
-                res.json({ 
-                    message: 'Cart updated successfully'
-                });
-            } else {
-                res.status(404).json({ error: 'Item not found in cart' });
-            }
-
+            return res.json({ message: 'Cart updated successfully' });
         } catch (error) {
-            console.error('Update cart error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
     async removeItem(req, res) {
         try {
-            const userId = req.user.userId;
+            const cartId = req.user.userId;
             const { productId } = req.body;
 
-            if (!productId) {
-                return res.status(400).json({ error: 'Product ID is required' });
-            }
+            await removeCartItemUseCase.execute({
+                cartId,
+                productId
+            });
 
-            const success = await Cart.removeItem(userId, productId);
-
-            if (success) {
-                res.json({ 
-                    message: 'Item removed from cart successfully'
-                });
-            } else {
-                res.status(404).json({ error: 'Item not found in cart' });
-            }
-
+            return res.json({ message: 'Item removed from cart successfully' });
         } catch (error) {
-            console.error('Remove from cart error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
-
     async calculateShipping(req, res) {
         try {
-            const userId = req.user.userId;
-            const { shipping_method_id } = req.body;
+            const cartId = req.user.userId;
+            const { shippingMethodId } = req.body;
 
-            if (!shipping_method_id) {
-                return res.status(400).json({ error: 'Shipping method ID is required' });
-            }
-
-        
-            const cartItems = await Cart.findByUserId(userId);
-            
-            if (cartItems.length === 0) {
-                return res.status(400).json({ error: 'Cart is empty' });
-            }
-
-         
-            const Shipping = require('../models/Shipping');
-            const shipping = await Shipping.calculateCartShipping(cartItems, shipping_method_id);
-
-            const cartTotal = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
-            const totalWithShipping = cartTotal + parseFloat(shipping.price);
-
-            res.json({
-                message: 'Shipping calculated successfully',
-                cart: {
-                    items: cartItems,
-                    subtotal: cartTotal.toFixed(2),
-                    shipping: shipping,
-                    total: totalWithShipping.toFixed(2)
-                }
+            const result = await calculateCartShippingUseCase.execute({
+                cartId,
+                shippingMethodId
             });
 
+            return res.json(result);
         } catch (error) {
-            console.error('Calculate shipping error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     }
 };
 
-module.exports = cartController;
+module.exports = cartHandler;
