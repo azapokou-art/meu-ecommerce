@@ -1,79 +1,84 @@
-const Category = require('../models/Category');
+const CategoryRepositoryImpl = require('../infrastructure/database/repositories/CategoryRepositoryImpl');
 
-const categoryController = {
+const CreateCategoryUseCase = require('../application/use-cases/category/CreateCategoryUseCase');
+const GetAllCategoriesUseCase = require('../application/use-cases/category/GetAllCategoriesUseCase');
+const GetCategoryByIdUseCase = require('../application/use-cases/category/GetCategoryByIdUseCase');
+const GetProductsByCategoryUseCase = require('../application/use-cases/category/GetProductsByCategoryUseCase');
+
+const categoryRepository = new CategoryRepositoryImpl();
+
+const createCategoryUseCase = new CreateCategoryUseCase(categoryRepository);
+const getAllCategoriesUseCase = new GetAllCategoriesUseCase(categoryRepository);
+const getCategoryByIdUseCase = new GetCategoryByIdUseCase(categoryRepository);
+const getProductsByCategoryUseCase = new GetProductsByCategoryUseCase(categoryRepository);
+
+const categoryHandler = {
+
     async create(req, res) {
         try {
-            const { name, description, image_url } = req.body;
+            const categoryId = await createCategoryUseCase.execute(req.body);
 
-            if (!name) {
-                return res.status(400).json({ error: 'Category name is required' });
-            }
-
-            const categoryId = await Category.create({
-                name,
-                description: description || '',
-                image_url: image_url || ''
-            });
-
-            res.status(201).json({ 
+            return res.status(201).json({
                 message: 'Category created successfully',
-                categoryId: categoryId 
+                categoryId
             });
 
         } catch (error) {
-            console.error('Create category error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
     async getAll(req, res) {
         try {
-            const categories = await Category.findAll();
-            res.json({
+            const categories = await getAllCategoriesUseCase.execute();
+
+            return res.json({
                 message: 'Categories retrieved successfully',
-                categories: categories,
+                categories,
                 count: categories.length
             });
+
         } catch (error) {
-            console.error('Get categories error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({ error: 'Internal server error' });
         }
     },
 
     async getById(req, res) {
         try {
-            const { id } = req.params;
-            const category = await Category.findById(id);
+            const category = await getCategoryByIdUseCase.execute({
+                id: req.params.id
+            });
 
-            if (!category) {
-                return res.status(404).json({ error: 'Category not found' });
+            return res.json({
+                message: 'Category retrieved successfully',
+                category
+            });
+
+        } catch (error) {
+            if (error.message === 'Category not found') {
+                return res.status(404).json({ error: error.message });
             }
 
-            res.json({
-                message: 'Category retrieved successfully',
-                category: category
-            });
-        } catch (error) {
-            console.error('Get category error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     },
 
     async getProducts(req, res) {
         try {
-            const { id } = req.params;
-            const products = await Category.findProductsByCategory(id);
+            const products = await getProductsByCategoryUseCase.execute({
+                categoryId: req.params.id
+            });
 
-            res.json({
+            return res.json({
                 message: 'Category products retrieved successfully',
-                products: products,
+                products,
                 count: products.length
             });
+
         } catch (error) {
-            console.error('Get category products error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({ error: error.message });
         }
     }
 };
 
-module.exports = categoryController;
+module.exports = categoryHandler;
