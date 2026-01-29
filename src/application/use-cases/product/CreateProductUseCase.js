@@ -4,13 +4,7 @@ class CreateProductUseCase {
     }
 
     async execute({
-        name,
-        description,
-        price,
-        stock_quantity,
-        category_id,
-        image_url,
-        featured
+        name, description, price, stock_quantity, category_id, image_url, featured
     }) {
         if (!name) {
             throw new Error('Product name is required');
