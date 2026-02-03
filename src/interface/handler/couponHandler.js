@@ -1,6 +1,6 @@
 const Coupon = require('../models/Coupon');
 
-const couponController = {
+const couponHandler = {
    
     async create(req, res) {
         try {
@@ -173,4 +173,4 @@ const couponController = {
     }
 };
 
-module.exports = couponController;
+module.exports = couponHandler;
