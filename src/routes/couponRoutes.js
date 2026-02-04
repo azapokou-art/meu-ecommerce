@@ -1,15 +1,14 @@
 const express = require('express');
-const couponController = require('../interface/handler/couponHandler');
+const couponHandler = require('../interface/handler/couponHandler');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 
 const router = express.Router();
 
-router.post('/validate', authMiddleware, couponController.validate);
+router.post('/validate', authMiddleware, couponHandler.validate);
 
-
-router.post('/', authMiddleware, adminMiddleware, couponController.create);
-router.get('/', authMiddleware, adminMiddleware, couponController.getAll);
-router.put('/:couponId', authMiddleware, adminMiddleware, couponController.update);
+router.post('/', authMiddleware, adminMiddleware, couponHandler.create);
+router.get('/', authMiddleware, adminMiddleware, couponHandler.getAll);
+router.put('/:couponId', authMiddleware, adminMiddleware, couponHandler.update);
 
 module.exports = router;
