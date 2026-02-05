@@ -1,115 +1,96 @@
-const Order = require('../models/Order');
-const Cart = require('../models/Cart');
-const UserPoints = require('../models/UserPoints');
-const StockMonitorService = require('../services/StockMonitorService');
+const OrderRepositoryImpl = require('../../infrastructure/database/repositories/OrderRepositoryImpl');
+const CartRepositoryImpl = require('../../infrastructure/database/repositories/CartRepositoryImpl');
+const UserPointsRepositoryImpl = require('../../infrastructure/database/repositories/UserPointsRepositoryImpl');
+const StockMonitorService = require('../../infrastructure/services/StockMonitorService');
+
+const CreateOrderUseCase = require('../../application/use-cases/order/CreateOrderUseCase');
+const GetUserOrdersUseCase = require('../../application/use-cases/order/GetUserOrdersUseCase');
+const GetOrderByIdUseCase = require('../../application/use-cases/order/GetOrderByIdUseCase');
+
+const orderRepository = new OrderRepositoryImpl();
+const cartRepository = new CartRepositoryImpl();
+const userPointsRepository = new UserPointsRepositoryImpl();
+const stockMonitorService = new StockMonitorService();
+
+const createOrderUseCase = new CreateOrderUseCase(
+    orderRepository,
+    cartRepository,
+    userPointsRepository,
+    stockMonitorService
+);
+
+const getUserOrdersUseCase = new GetUserOrdersUseCase(orderRepository);
+const getOrderByIdUseCase = new GetOrderByIdUseCase(orderRepository);
 
 const orderHandler = {
+
     async createOrder(req, res) {
         try {
-            const userId = req.user.userId;
-            const { paymentMethod, shippingAddress } = req.body;
-
-            const cartItems = await Cart.findByUserId(userId);
-            
-            if (cartItems.length === 0) {
-                return res.status(400).json({ error: 'Cart is empty' });
-            }
-
-            const totalAmount = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
-
-          
-            const orderId = await Order.create({
-                userId,
-                totalAmount,
-                paymentMethod: paymentMethod || 'credit_card',
-                shippingAddress: shippingAddress || 'Address not provided'
+            const result = await createOrderUseCase.execute({
+                userId: req.user.userId,
+                paymentMethod: req.body.paymentMethod,
+                shippingAddress: req.body.shippingAddress
             });
 
-        
-            for (const item of cartItems) {
-                await Order.addItem(orderId, {
-                    productId: item.product_id,
-                    quantity: item.quantity,
-                    unitPrice: item.price,
-                    subtotal: item.subtotal
-                });
-    
-
-            const pointsEarned = Math.floor(totalAmount);
-
-            for (const item of cartItems) {
-    await StockMonitorService.checkProductStockAfterSale(item.product_id, item.quantity);
-            }
-
-await UserPoints.addPoints(
-    userId,
-    pointsEarned,
-    'earned',
-    `Pontos ganhos pelo pedido #${orderId}`,
-    orderId,
-    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-);
-            };
-
-await Order.updateStatus(orderId, 'pending');
-            
-
-        
-            await Cart.clear(userId);
-
-            res.status(201).json({
+            return res.status(201).json({
                 message: 'Order created successfully',
-                orderId: orderId,
-                totalAmount: totalAmount.toFixed(2)
+                orderId: result.orderId,
+                totalAmount: result.totalAmount.toFixed(2)
             });
 
         } catch (error) {
-            console.error('Create order error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(400).json({
+                error: error.message
+            });
         }
     },
 
     async getUserOrders(req, res) {
         try {
-            const userId = req.user.userId;
-            const orders = await Order.findByUserId(userId);
+            const orders = await getUserOrdersUseCase.execute({
+                userId: req.user.userId
+            });
 
-            res.json({
+            return res.json({
                 message: 'Orders retrieved successfully',
-                orders: orders,
+                orders,
                 count: orders.length
             });
 
         } catch (error) {
-            console.error('Get orders error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return res.status(500).json({
+                error: 'Internal server error'
+            });
         }
     },
 
     async getOrderById(req, res) {
         try {
-            const { orderId } = req.params;
-            const order = await Order.findById(orderId);
+            const order = await getOrderByIdUseCase.execute({
+                orderId: req.params.orderId,
+                userId: req.user.userId
+            });
 
-            if (!order) {
-                return res.status(404).json({ error: 'Order not found' });
-            }
-
-        
-            if (order.user_id !== req.user.userId) {
-                return res.status(403).json({ error: 'Access denied' });
-            }
-
-            res.json({
+            return res.json({
                 message: 'Order retrieved successfully',
-                order: order
+                order
             });
 
         } catch (error) {
-            console.error('Get order error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            if (error.message === 'Order not found') {
+                return res.status(404).json({ error: error.message });
+            }
+
+            if (error.message === 'Access denied') {
+                return res.status(403).json({ error: error.message });
+            }
+
+            return res.status(400).json({
+                error: error.message
+            });
         }
     }
+
 };
 
 module.exports = orderHandler;
