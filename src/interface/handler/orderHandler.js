@@ -3,7 +3,7 @@ const Cart = require('../models/Cart');
 const UserPoints = require('../models/UserPoints');
 const StockMonitorService = require('../services/StockMonitorService');
 
-const orderController = {
+const orderHandler = {
     async createOrder(req, res) {
         try {
             const userId = req.user.userId;
@@ -112,4 +112,4 @@ await Order.updateStatus(orderId, 'pending');
     }
 };
 
-module.exports = orderController;
+module.exports = orderHandler;
