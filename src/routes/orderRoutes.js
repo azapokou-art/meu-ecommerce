@@ -1,12 +1,14 @@
 const express = require('express');
-const orderController = require('../interface/handler/orderHandler');
+const orderHandler = reuquire('../interface/handler/orderHandler');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
 
-router.post('/', authMiddleware, orderController.createOrder);
-router.get('/', authMiddleware, orderController.getUserOrders);
-router.get('/:orderId', authMiddleware, orderController.getOrderById);
+router.post('/', authMiddleware, orderHandler.createOrder);
+
+router.get('/', authMiddleware, orderHandler.getUserOrders);
+
+router.get('/:orderId', authMiddleware, orderHandler.getOrderById);
 
 module.exports = router;
